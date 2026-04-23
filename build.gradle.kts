@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
-	id "org.jetbrains.kotlin.jvm" version "2.3.20"
+	id("net.fabricmc.fabric-loom")
+	`maven-publish`
+	id("org.jetbrains.kotlin.jvm") version "2.3.20"
 }
 
-version = project.mod_version
-group = project.maven_group
+version = providers.gradleProperty("mod_version").get()
+group = providers.gradleProperty("maven_group").get()
 
 repositories {
 	// Add repositories to retrieve artifacts from in here.
@@ -21,12 +21,11 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"dalui" {
-			sourceSet sourceSets.main
-			sourceSet sourceSets.client
+		register("dalui") {
+			sourceSet(sourceSets.main.get())
+			sourceSet(sourceSets.getByName("client"))
 		}
 	}
-
 }
 
 fabricApi {
@@ -37,25 +36,25 @@ fabricApi {
 
 dependencies {
 	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
 	
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation("net.fabricmc:fabric-loader:${providers.gradleProperty("loader_version").get()}")
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	implementation "net.fabricmc:fabric-language-kotlin:${project.fabric_kotlin_version}"
+	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
+	implementation("net.fabricmc:fabric-language-kotlin:${providers.gradleProperty("fabric_kotlin_version").get()}")
 }
 
-processResources {
-	inputs.property "version", project.version
+tasks.processResources {
+	inputs.property("version", version)
 
 	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
+		expand("version" to version)
 	}
 }
 
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+tasks.withType<JavaCompile>().configureEach {
+	options.release = 25
 }
 
 kotlin {
@@ -74,19 +73,19 @@ java {
 	targetCompatibility = JavaVersion.VERSION_25
 }
 
-jar {
-	inputs.property "projectName", project.name
+tasks.jar {
+	inputs.property("projectName", project.name)
 
 	from("LICENSE") {
-		rename { "${it}_${project.name}"}
+		rename { "${it}_${project.name}" }
 	}
 }
 
 // configure the maven publication
 publishing {
 	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
+		register<MavenPublication>("mavenJava") {
+			from(components["java"])
 		}
 	}
 
